@@ -999,32 +999,90 @@
 
         function showNotification(storeName, itemCount) {
             const message = `You're near ${storeName}! You have ${itemCount} item${itemCount > 1 ? 's' : ''} to buy.`;
-            if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification('🛒 Shopping Reminder', {
-                    body: message
+            
+            // Try service worker notification first (works better on mobile)
+            if ('serviceWorker' in navigator && 'Notification' in window && Notification.permission === 'granted') {
+                navigator.serviceWorker.ready.then(registration => {
+                    registration.showNotification('🛒 Shopping Reminder', {
+                        body: message,
+                        icon: '/icon-192.png',
+                        badge: '/icon-192.png',
+                        vibrate: [200, 100, 200],
+                        tag: 'shopping-reminder',
+                        requireInteraction: false,
+                        silent: false
+                    }).catch(err => {
+                        console.error('Service worker notification failed:', err);
+                        // Fallback to regular notification
+                        try {
+                            new Notification('🛒 Shopping Reminder', {
+                                body: message,
+                                icon: '/icon-192.png',
+                                vibrate: [200, 100, 200]
+                            });
+                        } catch (e) {
+                            // Final fallback to alert
+                            alert(`🛒 ${message}`);
+                        }
+                    });
                 });
+            } else if ('Notification' in window && Notification.permission === 'granted') {
+                try {
+                    new Notification('🛒 Shopping Reminder', {
+                        body: message,
+                        icon: '/icon-192.png',
+                        vibrate: [200, 100, 200]
+                    });
+                } catch (e) {
+                    alert(`🛒 ${message}`);
+                }
             } else {
+                // Show alert as fallback
                 alert(`🛒 ${message}`);
             }
         }
 
         function startLocationTracking() {
             if ('geolocation' in navigator) {
+                // Use different settings for mobile
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                
                 watchId = navigator.geolocation.watchPosition(
                     checkNearbyStores,
                     (error) => {
                         console.error('Location error:', error);
-                        alert('Could not access location. Please enable location services.');
+                        let errorMsg = 'Could not access location. ';
+                        if (error.code === 1) {
+                            errorMsg += 'Please enable location permissions in your browser settings.';
+                        } else if (error.code === 2) {
+                            errorMsg += 'Location unavailable.';
+                        } else if (error.code === 3) {
+                            errorMsg += 'Location request timed out.';
+                        }
+                        alert(errorMsg);
                         locationToggle.checked = false;
                         locationEnabled = false;
                         saveData();
                     },
                     {
-                        enableHighAccuracy: true,
-                        maximumAge: 60000,
-                        timeout: 27000
+                        enableHighAccuracy: !isMobile, // Use less battery on mobile
+                        maximumAge: isMobile ? 120000 : 60000, // Cache longer on mobile
+                        timeout: 30000
                     }
                 );
+                
+                // Keep checking periodically even if watch fails
+                if (isMobile) {
+                    setInterval(() => {
+                        if (locationEnabled && watchId) {
+                            navigator.geolocation.getCurrentPosition(
+                                checkNearbyStores,
+                                (error) => console.log('Periodic check failed:', error),
+                                { enableHighAccuracy: false, maximumAge: 120000, timeout: 10000 }
+                            );
+                        }
+                    }, 300000); // Check every 5 minutes
+                }
             } else {
                 alert('Geolocation not supported by your browser.');
                 locationToggle.checked = false;
@@ -1044,27 +1102,55 @@
             if (e.key === 'Enter') addItem();
         });
 
-        locationToggle.addEventListener('change', (e) => {
+        locationToggle.addEventListener('change', async (e) => {
             locationEnabled = e.target.checked;
             saveData();
             
             if (locationEnabled) {
-                if ('Notification' in window && Notification.permission === 'default') {
-                    Notification.requestPermission().then(permission => {
-                        if (permission === 'granted') {
-                            startLocationTracking();
-                            alert('Location tracking enabled!');
-                        } else {
+                // Request notification permission first
+                if ('Notification' in window) {
+                    if (Notification.permission === 'default') {
+                        const permission = await Notification.requestPermission();
+                        if (permission !== 'granted') {
+                            alert('Notifications are required for store reminders. Please enable them in your browser settings.');
                             locationToggle.checked = false;
                             locationEnabled = false;
-                            alert('Please enable notifications for reminders.');
+                            saveData();
+                            return;
                         }
-                    });
-                } else if (Notification.permission === 'granted') {
-                    startLocationTracking();
-                    alert('Location tracking enabled!');
+                    } else if (Notification.permission === 'denied') {
+                        alert('Notifications are blocked. Please enable them in your browser settings to use store reminders.');
+                        locationToggle.checked = false;
+                        locationEnabled = false;
+                        saveData();
+                        return;
+                    }
+                }
+                
+                // Then request location permission
+                if ('geolocation' in navigator) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            startLocationTracking();
+                            alert('Location tracking enabled! You\'ll get notified when near your stores.');
+                        },
+                        (error) => {
+                            let errorMsg = 'Could not access location. ';
+                            if (error.code === 1) {
+                                errorMsg += 'Please enable location permissions in your browser/device settings.';
+                            }
+                            alert(errorMsg);
+                            locationToggle.checked = false;
+                            locationEnabled = false;
+                            saveData();
+                        },
+                        { enableHighAccuracy: false, timeout: 10000 }
+                    );
                 } else {
-                    startLocationTracking();
+                    alert('Geolocation is not supported by your browser.');
+                    locationToggle.checked = false;
+                    locationEnabled = false;
+                    saveData();
                 }
             } else {
                 stopLocationTracking();

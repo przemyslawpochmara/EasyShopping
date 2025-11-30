@@ -1,0 +1,66 @@
+========================================
+Mobile Notifications Setup Guide
+========================================
+
+IMPORTANT: Mobile browsers have strict requirements for notifications!
+
+STEP 1: Enable Notifications
+-----------------------------
+iPhone (Safari):
+1. Go to Settings → Safari → Advanced
+2. Enable "Experimental Features"
+3. Enable "Notifications"
+4. When the app asks, tap "Allow"
+
+Android (Chrome):
+1. When the app asks, tap "Allow"
+2. If blocked, go to Settings → Site Settings → Notifications
+3. Find your app URL and enable notifications
+
+STEP 2: Enable Location
+------------------------
+iPhone:
+1. Settings → Privacy → Location Services
+2. Enable Location Services
+3. Find Safari → Select "While Using the App"
+
+Android:
+1. Settings → Apps → Chrome (or your browser)
+2. Permissions → Location
+3. Select "Allow only while using the app"
+
+STEP 3: Keep App Open
+----------------------
+For best results on mobile:
+- Keep the app open in a browser tab
+- Don't close the browser completely
+- Add to home screen for better performance
+
+STEP 4: Add to Home Screen (Recommended)
+-----------------------------------------
+iPhone:
+1. Open app in Safari
+2. Tap Share button
+3. Tap "Add to Home Screen"
+4. Open from home screen icon
+
+Android:
+1. Open app in Chrome
+2. Tap menu (3 dots)
+3. Tap "Add to Home Screen"
+4. Open from home screen icon
+
+TROUBLESHOOTING:
+----------------
+If notifications don't work:
+1. Make sure you allowed notifications when prompted
+2. Check browser notification settings
+3. Try adding to home screen
+4. Keep the app open in background
+5. Some browsers don't support background notifications
+
+Note: Background notifications work best when:
+- App is added to home screen
+- App is open (even in background)
+- Location permissions are granted
+- Notification permissions are granted
