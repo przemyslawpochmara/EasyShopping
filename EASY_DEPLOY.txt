@@ -1,0 +1,56 @@
+========================================
+Deploy WITHOUT Installing Git
+========================================
+
+METHOD 1: Upload Directly on GitHub (EASIEST)
+----------------------------------------------
+1. Go to: https://github.com
+2. Sign up or log in
+3. Click "+" (top right) → "New repository"
+4. Name: easyshopping
+5. Make it PUBLIC
+6. Click "Create repository"
+
+7. Click "uploading an existing file"
+8. Drag these files into the browser:
+   - index.html
+   - app.js
+   - style.css
+   - manifest.json
+   - sw.js
+
+9. Click "Commit changes"
+
+10. Go to Settings → Pages
+11. Source: select "main" branch
+12. Click "Save"
+13. Wait 2 minutes
+
+14. Your app is live at:
+    https://YOUR-USERNAME.github.io/easyshopping
+
+
+METHOD 2: Use Netlify (SUPER EASY)
+-----------------------------------
+1. Go to: https://www.netlify.com
+2. Sign up (free)
+3. Click "Add new site" → "Deploy manually"
+4. Drag your folder into the browser
+5. Done! You get a link instantly
+6. Open the link on your phone
+
+
+METHOD 3: Use GitHub Desktop (NO COMMANDS)
+-------------------------------------------
+1. Download: https://desktop.github.com
+2. Install and sign in to GitHub
+3. Click "Create new repository"
+4. Name: easyshopping
+5. Choose your folder location
+6. Click "Publish repository"
+7. Make it public
+8. Enable Pages in GitHub settings
+
+
+RECOMMENDED: Use Netlify (Method 2)
+It's the fastest and easiest!

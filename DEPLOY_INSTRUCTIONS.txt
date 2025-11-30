@@ -1,0 +1,70 @@
+========================================
+EasyShopping - Deployment Instructions
+========================================
+
+STEP 1: Install Git (if you don't have it)
+-------------------------------------------
+1. Go to: https://git-scm.com/download/win
+2. Download and install Git
+3. Restart your computer
+
+
+STEP 2: Create GitHub Account
+------------------------------
+1. Go to: https://github.com
+2. Click "Sign up"
+3. Create a free account
+
+
+STEP 3: Create Repository
+--------------------------
+1. Log in to GitHub
+2. Click the "+" button (top right corner)
+3. Click "New repository"
+4. Repository name: easyshopping
+5. Make it PUBLIC (important!)
+6. Click "Create repository"
+
+
+STEP 4: Run the Deployment Script
+----------------------------------
+1. Double-click "deploy.bat"
+2. Enter your GitHub username when asked
+3. Follow the prompts
+4. Enter your GitHub password if asked
+
+
+STEP 5: Enable GitHub Pages
+----------------------------
+1. Go to: https://github.com/YOUR-USERNAME/easyshopping
+2. Click "Settings" tab
+3. Click "Pages" in the left sidebar
+4. Under "Source", select "main" branch
+5. Click "Save"
+6. Wait 1-2 minutes for deployment
+
+
+STEP 6: Install on Your Phone
+------------------------------
+1. Open this URL on your phone:
+   https://YOUR-USERNAME.github.io/easyshopping
+
+2. iPhone:
+   - Tap the Share button
+   - Tap "Add to Home Screen"
+   - Tap "Add"
+
+3. Android:
+   - Tap the menu (3 dots)
+   - Tap "Add to Home Screen" or "Install app"
+   - Tap "Install"
+
+
+DONE! The app is now on your phone's home screen!
+
+========================================
+Need Help?
+========================================
+If you get stuck, you can also:
+1. Upload files manually to GitHub through the website
+2. Use GitHub Desktop app (easier): https://desktop.github.com

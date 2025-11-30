@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <title>EasyShopping</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: white;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+        }
+
+        h1 {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .location-section {
+            background: #f0fdf4;
+            margin: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #d1fae5;
+        }
+
+        .location-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .location-text {
+            color: #059669;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .switch {
+            position: relative;
+            width: 50px;
+            height: 28px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 28px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #10b981;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+
+        .manage-stores-btn {
+            width: 100%;
+            background: white;
+            color: #059669;
+            border: 2px solid #10b981;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .manage-stores-btn:hover {
+            background: #f0fdf4;
+        }
+
+        .input-section {
+            padding: 15px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        #itemInput {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #d1fae5;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        #itemInput:focus {
+            outline: none;
+            border-color: #10b981;
+        }
+
+        .store-section {
+            margin-top: 10px;
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 10px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .store-section summary {
+            cursor: pointer;
+            font-size: 14px;
+            color: #059669;
+            font-weight: bold;
+            padding: 5px;
+        }
+
+        .stores-list {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .store-item-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .store-item-checkbox input[type="checkbox"],
+        .store-item-checkbox input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        #addBtn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #addBtn:hover {
+            background: #059669;
+        }
+
+        #shoppingList {
+            list-style: none;
+            padding: 0 15px 80px 15px;
+            background: #fafafa;
+        }
+
+        .list-item {
+            display: flex;
+            align-items: center;
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            border: 2px solid #e5e7eb;
+        }
+
+        .list-item:hover {
+            border-color: #10b981;
+        }
+
+        .list-item input[type="checkbox"] {
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+            cursor: pointer;
+        }
+
+        .list-item-content {
+            flex: 1;
+        }
+
+        .list-item-text {
+            font-size: 16px;
+            color: #333;
+        }
+
+        .list-item-store {
+            font-size: 12px;
+            color: #10b981;
+            margin-top: 4px;
+        }
+
+        .list-item.completed .list-item-text {
+            text-decoration: line-through;
+            color: #999;
+        }
+
+        .list-item.completed .list-item-store {
+            color: #999;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+        }
+
+        .modal.show {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-content h2 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .add-store-section {
+            margin-bottom: 20px;
+        }
+
+        #storeNameInput {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        #storeAddressInput {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .search-results {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .search-results.show {
+            display: block;
+        }
+
+        .search-result-item {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            background: white;
+        }
+
+        .search-result-item:hover {
+            background: #f8f9fa;
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .search-result-address {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .button-group button {
+            flex: 1;
+        }
+
+        #addStoreBtn, #searchStoreBtn {
+            width: 100%;
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #addStoreBtn:hover, #searchStoreBtn:hover {
+            background: #059669;
+        }
+
+        #searchStoreBtn {
+            background: #34d399;
+        }
+
+        #searchStoreBtn:hover {
+            background: #10b981;
+        }
+
+        .store-list {
+            margin-bottom: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .store-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f9fafb;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .store-item span {
+            flex: 1;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .empty-text {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+            font-size: 14px;
+        }
+
+        .close-btn {
+            width: 100%;
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        button:active {
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛒 EasyShopping</h1>
+        </div>
+
+        <div class="location-section">
+            <div class="location-row">
+                <span class="location-text">📍 Store Reminders</span>
+                <label class="switch">
+                    <input type="checkbox" id="locationToggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <button class="manage-stores-btn" id="manageStoresBtn">
+                Manage Stores (<span id="storeCount">0</span>)
+            </button>
+            <button class="manage-stores-btn" id="manageFranchisesBtn" style="margin-top: 10px;">
+                Favorite Retail Chains (<span id="franchiseCount">0</span>)
+            </button>
+        </div>
+
+        <div class="input-section">
+            <div class="input-row">
+                <input type="text" id="itemInput" placeholder="Add an item...">
+                <button id="addBtn">Add</button>
+            </div>
+            <details class="store-section">
+                <summary>Select store (optional)</summary>
+                <div id="storeSelectList" class="stores-list"></div>
+            </details>
+            <details class="store-section">
+                <summary>Exclude stores (optional)</summary>
+                <div id="excludeStoresList" class="stores-list"></div>
+            </details>
+        </div>
+
+        <ul id="shoppingList"></ul>
+    </div>
+
+    <div id="storeModal" class="modal">
+        <div class="modal-content">
+            <h2>My Stores</h2>
+            <div class="add-store-section">
+                <input type="text" id="storeNameInput" placeholder="Store name (e.g., Walmart)">
+                <button id="addStoreBtn">Add Current Location</button>
+                
+                <div style="text-align: center; margin: 15px 0; color: #999;">OR</div>
+                
+                <input type="text" id="storeAddressInput" placeholder="Search for a store or address...">
+                <button id="searchStoreBtn">Search on Map</button>
+                <div id="searchResults" class="search-results"></div>
+            </div>
+            <div id="storeList" class="store-list"></div>
+            <button class="close-btn" id="closeModalBtn">Close</button>
+        </div>
+    </div>
+
+    <div id="franchiseModal" class="modal">
+        <div class="modal-content">
+            <h2>⭐ Favorite Retail Chains</h2>
+            <p style="color: #666; font-size: 14px; margin-bottom: 15px; text-align: center;">
+                Get notified at ANY location of these stores
+            </p>
+            <div class="add-store-section">
+                <input type="text" id="franchiseNameInput" placeholder="Chain name (e.g., Walmart, Target)">
+                <button id="addFranchiseBtn">Add Chain</button>
+            </div>
+            <div id="franchiseList" class="store-list"></div>
+            <button class="close-btn" id="closeFranchiseModalBtn">Close</button>
+        </div>
+    </div>
+
+    <script>
+        const itemInput = document.getElementById('itemInput');
+        const addBtn = document.getElementById('addBtn');
+        const shoppingList = document.getElementById('shoppingList');
+        const locationToggle = document.getElementById('locationToggle');
+        const manageStoresBtn = document.getElementById('manageStoresBtn');
+        const storeModal = document.getElementById('storeModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const storeNameInput = document.getElementById('storeNameInput');
+        const addStoreBtn = document.getElementById('addStoreBtn');
+        const storeAddressInput = document.getElementById('storeAddressInput');
+        const searchStoreBtn = document.getElementById('searchStoreBtn');
+        const searchResults = document.getElementById('searchResults');
+        const storeListEl = document.getElementById('storeList');
+        const storeCount = document.getElementById('storeCount');
+        const storeSelectList = document.getElementById('storeSelectList');
+        const excludeStoresList = document.getElementById('excludeStoresList');
+        const manageFranchisesBtn = document.getElementById('manageFranchisesBtn');
+        const franchiseModal = document.getElementById('franchiseModal');
+        const closeFranchiseModalBtn = document.getElementById('closeFranchiseModalBtn');
+        const franchiseNameInput = document.getElementById('franchiseNameInput');
+        const addFranchiseBtn = document.getElementById('addFranchiseBtn');
+        const franchiseListEl = document.getElementById('franchiseList');
+        const franchiseCount = document.getElementById('franchiseCount');
+
+        let items = JSON.parse(localStorage.getItem('shoppingList') || '[]');
+        let stores = JSON.parse(localStorage.getItem('stores') || '[]');
+        let franchises = JSON.parse(localStorage.getItem('franchises') || '[]');
+        let locationEnabled = localStorage.getItem('locationEnabled') === 'true';
+        let watchId = null;
+
+        function updateStoreSelect() {
+            storeSelectList.innerHTML = '';
+            
+            if (franchises.length === 0 && stores.length === 0) {
+                storeSelectList.innerHTML = '<div style="color: #999; font-size: 12px;">No stores to select</div>';
+            } else {
+                // Add "All stores" option
+                const allLabel = document.createElement('label');
+                allLabel.className = 'store-item-checkbox';
+                const allRadio = document.createElement('input');
+                allRadio.type = 'radio';
+                allRadio.name = 'storeSelect';
+                allRadio.value = '';
+                allRadio.checked = true;
+                const allSpan = document.createElement('span');
+                allSpan.textContent = 'All stores';
+                allLabel.appendChild(allRadio);
+                allLabel.appendChild(allSpan);
+                storeSelectList.appendChild(allLabel);
+                
+                // Add retail chains
+                if (franchises.length > 0) {
+                    const chainHeader = document.createElement('div');
+                    chainHeader.style.cssText = 'width: 100%; font-weight: bold; color: #10b981; font-size: 12px; margin-top: 8px;';
+                    chainHeader.textContent = '⭐ RETAIL CHAINS';
+                    storeSelectList.appendChild(chainHeader);
+                    
+                    franchises.forEach((franchise, index) => {
+                        const label = document.createElement('label');
+                        label.className = 'store-item-checkbox';
+                        const radio = document.createElement('input');
+                        radio.type = 'radio';
+                        radio.name = 'storeSelect';
+                        radio.value = `chain-${index}`;
+                        const span = document.createElement('span');
+                        span.textContent = franchise.name;
+                        label.appendChild(radio);
+                        label.appendChild(span);
+                        storeSelectList.appendChild(label);
+                    });
+                }
+                
+                // Add specific stores
+                if (stores.length > 0) {
+                    const storeHeader = document.createElement('div');
+                    storeHeader.style.cssText = 'width: 100%; font-weight: bold; color: #10b981; font-size: 12px; margin-top: 8px;';
+                    storeHeader.textContent = '📍 SPECIFIC STORES';
+                    storeSelectList.appendChild(storeHeader);
+                    
+                    stores.forEach((store, index) => {
+                        const label = document.createElement('label');
+                        label.className = 'store-item-checkbox';
+                        const radio = document.createElement('input');
+                        radio.type = 'radio';
+                        radio.name = 'storeSelect';
+                        radio.value = `store-${index}`;
+                        const span = document.createElement('span');
+                        span.textContent = store.name;
+                        label.appendChild(radio);
+                        label.appendChild(span);
+                        storeSelectList.appendChild(label);
+                    });
+                }
+            }
+            
+            updateExcludeStoresList();
+        }
+
+        function updateExcludeStoresList() {
+            excludeStoresList.innerHTML = '';
+            
+            if (franchises.length === 0 && stores.length === 0) {
+                excludeStoresList.innerHTML = '<div style="color: #999; font-size: 12px;">No stores to exclude</div>';
+                return;
+            }
+            
+            // Add retail chains
+            if (franchises.length > 0) {
+                const chainHeader = document.createElement('div');
+                chainHeader.style.cssText = 'width: 100%; font-weight: bold; color: #dc3545; font-size: 12px; margin-bottom: 8px;';
+                chainHeader.textContent = '⭐ RETAIL CHAINS';
+                excludeStoresList.appendChild(chainHeader);
+                
+                franchises.forEach((franchise, index) => {
+                    const label = document.createElement('label');
+                    label.className = 'store-item-checkbox';
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.value = `chain-${index}`;
+                    checkbox.id = `exclude-chain-${index}`;
+                    
+                    const span = document.createElement('span');
+                    span.textContent = franchise.name;
+                    
+                    label.appendChild(checkbox);
+                    label.appendChild(span);
+                    excludeStoresList.appendChild(label);
+                });
+            }
+            
+            // Add specific stores
+            if (stores.length > 0) {
+                const storeHeader = document.createElement('div');
+                storeHeader.style.cssText = 'width: 100%; font-weight: bold; color: #dc3545; font-size: 12px; margin-top: 8px; margin-bottom: 8px;';
+                storeHeader.textContent = '📍 SPECIFIC STORES';
+                excludeStoresList.appendChild(storeHeader);
+                
+                stores.forEach((store, index) => {
+                    const label = document.createElement('label');
+                    label.className = 'store-item-checkbox';
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.value = `store-${index}`;
+                    checkbox.id = `exclude-store-${index}`;
+                    
+                    const span = document.createElement('span');
+                    span.textContent = store.name;
+                    
+                    label.appendChild(checkbox);
+                    label.appendChild(span);
+                    excludeStoresList.appendChild(label);
+                });
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('shoppingList', JSON.stringify(items));
+            localStorage.setItem('stores', JSON.stringify(stores));
+            localStorage.setItem('franchises', JSON.stringify(franchises));
+            localStorage.setItem('locationEnabled', locationEnabled);
+        }
+
+        function renderList() {
+            shoppingList.innerHTML = '';
+            items.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.className = `list-item ${item.completed ? 'completed' : ''}`;
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = item.completed;
+                checkbox.onchange = () => toggleItem(index);
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'list-item-content';
+                
+                const textDiv = document.createElement('div');
+                textDiv.className = 'list-item-text';
+                textDiv.textContent = item.text;
+                contentDiv.appendChild(textDiv);
+                
+                if (item.chainIndex !== undefined && franchises[item.chainIndex]) {
+                    const chainDiv = document.createElement('div');
+                    chainDiv.className = 'list-item-store';
+                    chainDiv.textContent = `⭐ ${franchises[item.chainIndex].name}`;
+                    contentDiv.appendChild(chainDiv);
+                } else if (item.storeIndex !== undefined && stores[item.storeIndex]) {
+                    const storeDiv = document.createElement('div');
+                    storeDiv.className = 'list-item-store';
+                    storeDiv.textContent = `📍 ${stores[item.storeIndex].name}`;
+                    contentDiv.appendChild(storeDiv);
+                }
+                
+                const excludedNames = [];
+                if (item.excludedChains && item.excludedChains.length > 0) {
+                    item.excludedChains.forEach(idx => {
+                        if (franchises[idx]) {
+                            excludedNames.push(franchises[idx].name);
+                        }
+                    });
+                }
+                if (item.excludedStores && item.excludedStores.length > 0) {
+                    item.excludedStores.forEach(idx => {
+                        if (stores[idx]) {
+                            excludedNames.push(stores[idx].name);
+                        }
+                    });
+                }
+                if (excludedNames.length > 0) {
+                    const excludeDiv = document.createElement('div');
+                    excludeDiv.className = 'list-item-store';
+                    excludeDiv.style.color = '#dc3545';
+                    excludeDiv.textContent = `🚫 Not at: ${excludedNames.join(', ')}`;
+                    contentDiv.appendChild(excludeDiv);
+                }
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.onclick = () => deleteItem(index);
+                
+                li.appendChild(checkbox);
+                li.appendChild(contentDiv);
+                li.appendChild(deleteBtn);
+                shoppingList.appendChild(li);
+            });
+        }
+
+        function renderStores() {
+            storeCount.textContent = stores.length;
+            storeListEl.innerHTML = '';
+            
+            if (stores.length === 0) {
+                storeListEl.innerHTML = '<div class="empty-text">No stores added yet. Add stores where you shop to get reminders!</div>';
+                return;
+            }
+            
+            stores.forEach((store, index) => {
+                const div = document.createElement('div');
+                div.className = 'store-item';
+                
+                const span = document.createElement('span');
+                span.textContent = `📍 ${store.name}`;
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.textContent = 'Remove';
+                deleteBtn.onclick = () => deleteStore(index);
+                
+                div.appendChild(span);
+                div.appendChild(deleteBtn);
+                storeListEl.appendChild(div);
+            });
+        }
+
+        function renderFranchises() {
+            franchiseCount.textContent = franchises.length;
+            franchiseListEl.innerHTML = '';
+            
+            if (franchises.length === 0) {
+                franchiseListEl.innerHTML = '<div class="empty-text">No retail chains added yet. Add your favorite store chains!</div>';
+                return;
+            }
+            
+            franchises.forEach((franchise, index) => {
+                const div = document.createElement('div');
+                div.className = 'store-item';
+                
+                const span = document.createElement('span');
+                span.textContent = `⭐ ${franchise.name}`;
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.textContent = 'Remove';
+                deleteBtn.onclick = () => deleteFranchise(index);
+                
+                div.appendChild(span);
+                div.appendChild(deleteBtn);
+                franchiseListEl.appendChild(div);
+            });
+        }
+
+        function deleteFranchise(index) {
+            if (confirm('Remove this retail chain?')) {
+                franchises.splice(index, 1);
+                items.forEach(item => {
+                    if (item.chainIndex === index) {
+                        delete item.chainIndex;
+                    } else if (item.chainIndex > index) {
+                        item.chainIndex--;
+                    }
+                    // Update excluded chains
+                    if (item.excludedChains) {
+                        item.excludedChains = item.excludedChains
+                            .filter(idx => idx !== index)
+                            .map(idx => idx > index ? idx - 1 : idx);
+                        if (item.excludedChains.length === 0) {
+                            delete item.excludedChains;
+                        }
+                    }
+                });
+                saveData();
+                renderFranchises();
+                updateStoreSelect();
+                renderList();
+            }
+        }
+
+        function addItem() {
+            const text = itemInput.value.trim();
+            if (text) {
+                const item = { text, completed: false };
+                
+                // Get selected store/chain
+                const selectedRadio = document.querySelector('input[name="storeSelect"]:checked');
+                if (selectedRadio && selectedRadio.value !== '') {
+                    if (selectedRadio.value.startsWith('chain-')) {
+                        item.chainIndex = parseInt(selectedRadio.value.replace('chain-', ''));
+                    } else if (selectedRadio.value.startsWith('store-')) {
+                        item.storeIndex = parseInt(selectedRadio.value.replace('store-', ''));
+                    }
+                }
+                
+                // Get excluded stores and chains
+                const excludedStores = [];
+                const excludedChains = [];
+                document.querySelectorAll('#excludeStoresList input[type="checkbox"]:checked').forEach(checkbox => {
+                    if (checkbox.value.startsWith('chain-')) {
+                        excludedChains.push(parseInt(checkbox.value.replace('chain-', '')));
+                    } else if (checkbox.value.startsWith('store-')) {
+                        excludedStores.push(parseInt(checkbox.value.replace('store-', '')));
+                    }
+                });
+                if (excludedStores.length > 0) {
+                    item.excludedStores = excludedStores;
+                }
+                if (excludedChains.length > 0) {
+                    item.excludedChains = excludedChains;
+                }
+                
+                items.push(item);
+                itemInput.value = '';
+                
+                // Reset to "All stores"
+                const allRadio = document.querySelector('input[name="storeSelect"][value=""]');
+                if (allRadio) allRadio.checked = true;
+                
+                // Uncheck all exclude checkboxes
+                document.querySelectorAll('#excludeStoresList input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                
+                saveData();
+                renderList();
+            }
+        }
+
+        function toggleItem(index) {
+            items[index].completed = !items[index].completed;
+            saveData();
+            renderList();
+        }
+
+        function deleteItem(index) {
+            items.splice(index, 1);
+            saveData();
+            renderList();
+        }
+
+        function deleteStore(index) {
+            if (confirm('Remove this store?')) {
+                stores.splice(index, 1);
+                items.forEach(item => {
+                    if (item.storeIndex === index) {
+                        delete item.storeIndex;
+                    } else if (item.storeIndex > index) {
+                        item.storeIndex--;
+                    }
+                    // Update excluded stores
+                    if (item.excludedStores) {
+                        item.excludedStores = item.excludedStores
+                            .filter(idx => idx !== index)
+                            .map(idx => idx > index ? idx - 1 : idx);
+                        if (item.excludedStores.length === 0) {
+                            delete item.excludedStores;
+                        }
+                    }
+                });
+                saveData();
+                renderStores();
+                updateStoreSelect();
+                renderList();
+            }
+        }
+
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3;
+            const φ1 = lat1 * Math.PI / 180;
+            const φ2 = lat2 * Math.PI / 180;
+            const Δφ = (lat2 - lat1) * Math.PI / 180;
+            const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+            return R * c;
+        }
+
+        async function checkNearbyStores(position) {
+            const userLat = position.coords.latitude;
+            const userLon = position.coords.longitude;
+            const lastNotified = JSON.parse(localStorage.getItem('lastNotified') || '{}');
+            const now = Date.now();
+
+            // Check specific stores
+            stores.forEach((store, storeIndex) => {
+                const distance = getDistance(userLat, userLon, store.latitude, store.longitude);
+                
+                if (distance <= 200) {
+                    const storeItems = items.filter(item => {
+                        // Skip completed items
+                        if (item.completed) return false;
+                        
+                        // Skip if this store is excluded for this item
+                        if (item.excludedStores && item.excludedStores.includes(storeIndex)) return false;
+                        
+                        // Include if item has no specific store/chain or matches this store
+                        return (item.storeIndex === undefined && item.chainIndex === undefined) || item.storeIndex === storeIndex;
+                    });
+                    
+                    if (storeItems.length > 0) {
+                        const lastTime = lastNotified[store.name] || 0;
+                        if (now - lastTime > 3600000) {
+                            showNotification(store.name, storeItems.length);
+                            lastNotified[store.name] = now;
+                            localStorage.setItem('lastNotified', JSON.stringify(lastNotified));
+                        }
+                    }
+                }
+            });
+
+            // Check franchises
+            if (franchises.length > 0) {
+                try {
+                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLat}&lon=${userLon}&zoom=18`);
+                    const data = await response.json();
+                    const locationName = data.display_name.toLowerCase();
+                    
+                    franchises.forEach((franchise, chainIndex) => {
+                        if (locationName.includes(franchise.name.toLowerCase())) {
+                            // Get items for this chain or items without specific store/chain
+                            const chainItems = items.filter(item => {
+                                // Skip completed items
+                                if (item.completed) return false;
+                                
+                                // Skip if this chain is excluded for this item
+                                if (item.excludedChains && item.excludedChains.includes(chainIndex)) return false;
+                                
+                                // Include if item is for this chain or has no specific store/chain
+                                return item.chainIndex === chainIndex || 
+                                    (item.chainIndex === undefined && item.storeIndex === undefined);
+                            });
+                            
+                            if (chainItems.length > 0) {
+                                const lastTime = lastNotified[franchise.name] || 0;
+                                if (now - lastTime > 3600000) {
+                                    showNotification(franchise.name, chainItems.length);
+                                    lastNotified[franchise.name] = now;
+                                    localStorage.setItem('lastNotified', JSON.stringify(lastNotified));
+                                }
+                            }
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error checking franchises:', error);
+                }
+            }
+        }
+
+        function showNotification(storeName, itemCount) {
+            const message = `You're near ${storeName}! You have ${itemCount} item${itemCount > 1 ? 's' : ''} to buy.`;
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('🛒 Shopping Reminder', {
+                    body: message
+                });
+            } else {
+                alert(`🛒 ${message}`);
+            }
+        }
+
+        function startLocationTracking() {
+            if ('geolocation' in navigator) {
+                watchId = navigator.geolocation.watchPosition(
+                    checkNearbyStores,
+                    (error) => {
+                        console.error('Location error:', error);
+                        alert('Could not access location. Please enable location services.');
+                        locationToggle.checked = false;
+                        locationEnabled = false;
+                        saveData();
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        maximumAge: 60000,
+                        timeout: 27000
+                    }
+                );
+            } else {
+                alert('Geolocation not supported by your browser.');
+                locationToggle.checked = false;
+                locationEnabled = false;
+            }
+        }
+
+        function stopLocationTracking() {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+        }
+
+        addBtn.addEventListener('click', addItem);
+        itemInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addItem();
+        });
+
+        locationToggle.addEventListener('change', (e) => {
+            locationEnabled = e.target.checked;
+            saveData();
+            
+            if (locationEnabled) {
+                if ('Notification' in window && Notification.permission === 'default') {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            startLocationTracking();
+                            alert('Location tracking enabled!');
+                        } else {
+                            locationToggle.checked = false;
+                            locationEnabled = false;
+                            alert('Please enable notifications for reminders.');
+                        }
+                    });
+                } else if (Notification.permission === 'granted') {
+                    startLocationTracking();
+                    alert('Location tracking enabled!');
+                } else {
+                    startLocationTracking();
+                }
+            } else {
+                stopLocationTracking();
+            }
+        });
+
+        manageStoresBtn.addEventListener('click', () => {
+            storeModal.classList.add('show');
+            renderStores();
+        });
+
+        closeModalBtn.addEventListener('click', () => {
+            storeModal.classList.remove('show');
+        });
+
+        manageFranchisesBtn.addEventListener('click', () => {
+            franchiseModal.classList.add('show');
+            renderFranchises();
+        });
+
+        closeFranchiseModalBtn.addEventListener('click', () => {
+            franchiseModal.classList.remove('show');
+        });
+
+        addFranchiseBtn.addEventListener('click', () => {
+            const name = franchiseNameInput.value.trim();
+            if (!name) {
+                alert('Please enter a retail chain name');
+                return;
+            }
+            
+            franchises.push({ name: name });
+            saveData();
+            renderFranchises();
+            franchiseNameInput.value = '';
+            alert(`${name} added! You'll get notified at any ${name} location.`);
+        });
+
+        addStoreBtn.addEventListener('click', () => {
+            const name = storeNameInput.value.trim();
+            if (!name) {
+                alert('Please enter a store name');
+                return;
+            }
+            
+            if ('geolocation' in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        stores.push({
+                            name: name,
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude
+                        });
+                        saveData();
+                        renderStores();
+                        updateStoreSelect();
+                        storeNameInput.value = '';
+                        alert(`${name} added!`);
+                    },
+                    (error) => {
+                        alert('Could not get location. Please enable location services.');
+                    }
+                );
+            } else {
+                alert('Geolocation not supported.');
+            }
+        });
+
+        searchStoreBtn.addEventListener('click', async () => {
+            const query = storeAddressInput.value.trim();
+            if (!query) {
+                alert('Please enter a store name or address');
+                return;
+            }
+
+            searchResults.innerHTML = '<div style="padding: 15px; text-align: center;">Searching...</div>';
+            searchResults.classList.add('show');
+
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`);
+                const data = await response.json();
+
+                if (data.length === 0) {
+                    searchResults.innerHTML = '<div style="padding: 15px; text-align: center; color: #999;">No results found</div>';
+                    return;
+                }
+
+                searchResults.innerHTML = '';
+                data.forEach(place => {
+                    const item = document.createElement('div');
+                    item.className = 'search-result-item';
+                    
+                    const name = document.createElement('div');
+                    name.className = 'search-result-name';
+                    name.textContent = place.display_name.split(',')[0];
+                    
+                    const address = document.createElement('div');
+                    address.className = 'search-result-address';
+                    address.textContent = place.display_name;
+                    
+                    item.appendChild(name);
+                    item.appendChild(address);
+                    
+                    item.onclick = () => {
+                        stores.push({
+                            name: place.display_name.split(',')[0],
+                            latitude: parseFloat(place.lat),
+                            longitude: parseFloat(place.lon)
+                        });
+                        saveData();
+                        renderStores();
+                        updateStoreSelect();
+                        storeAddressInput.value = '';
+                        searchResults.classList.remove('show');
+                        searchResults.innerHTML = '';
+                        alert(`${place.display_name.split(',')[0]} added!`);
+                    };
+                    
+                    searchResults.appendChild(item);
+                });
+            } catch (error) {
+                searchResults.innerHTML = '<div style="padding: 15px; text-align: center; color: #dc3545;">Error searching. Please try again.</div>';
+            }
+        });
+
+        storeAddressInput.addEventListener('input', () => {
+            if (storeAddressInput.value.trim() === '') {
+                searchResults.classList.remove('show');
+                searchResults.innerHTML = '';
+            }
+        });
+
+        locationToggle.checked = locationEnabled;
+        if (locationEnabled) {
+            startLocationTracking();
+        }
+        updateStoreSelect();
+        renderList();
+        renderStores();
+        renderFranchises();
+    </script>
+</body>
+</html>
