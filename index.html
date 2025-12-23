@@ -460,6 +460,9 @@
             <button class="manage-stores-btn" id="manageFranchisesBtn" style="margin-top: 10px;">
                 Favorite Retail Chains (<span id="franchiseCount">0</span>)
             </button>
+            <button class="manage-stores-btn" id="debugBtn" style="margin-top: 10px; background: #6c757d; color: white;">
+                Debug Location (Tap to Test)
+            </button>
         </div>
 
         <div class="input-section">
@@ -543,6 +546,22 @@
         let franchises = JSON.parse(localStorage.getItem('franchises') || '[]');
         let locationEnabled = localStorage.getItem('locationEnabled') === 'true';
         let watchId = null;
+
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').then(() => {
+                console.log('Service Worker registered successfully');
+            }).catch((error) => {
+                console.error('Service Worker registration failed:', error);
+            });
+        }
+
+        // Request notification permission on page load
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission().then(permission => {
+                console.log('Notification permission:', permission);
+            });
+        }
 
         function updateStoreSelect() {
             storeSelectList.innerHTML = '';
@@ -927,14 +946,24 @@
         }
 
         async function checkNearbyStores(position) {
+            console.log('Checking nearby stores at:', position.coords.latitude, position.coords.longitude);
+            
             const userLat = position.coords.latitude;
             const userLon = position.coords.longitude;
             const lastNotified = JSON.parse(localStorage.getItem('lastNotified') || '{}');
             const now = Date.now();
 
+            // Check if there are any incomplete items
+            const hasIncompleteItems = items.some(item => !item.completed);
+            if (!hasIncompleteItems) {
+                console.log('No incomplete items, skipping notifications');
+                return;
+            }
+
             // Check specific stores
             stores.forEach((store, storeIndex) => {
                 const distance = getDistance(userLat, userLon, store.latitude, store.longitude);
+                console.log(`Distance to ${store.name}: ${Math.round(distance)}m`);
                 
                 if (distance <= 200) {
                     const storeItems = items.filter(item => {
@@ -950,24 +979,61 @@
                     
                     if (storeItems.length > 0) {
                         const lastTime = lastNotified[store.name] || 0;
-                        if (now - lastTime > 3600000) {
+                        if (now - lastTime > 3600000) { // 1 hour cooldown
+                            console.log(`Showing notification for ${store.name}`);
                             showNotification(store.name, storeItems.length);
                             lastNotified[store.name] = now;
                             localStorage.setItem('lastNotified', JSON.stringify(lastNotified));
+                        } else {
+                            console.log(`Notification cooldown active for ${store.name}`);
                         }
                     }
                 }
             });
 
-            // Check franchises
+            // Check franchises with improved detection
             if (franchises.length > 0) {
                 try {
-                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLat}&lon=${userLon}&zoom=18`);
-                    const data = await response.json();
-                    const locationName = data.display_name.toLowerCase();
+                    // Use multiple API calls for better accuracy
+                    const promises = [
+                        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLat}&lon=${userLon}&zoom=18`),
+                        fetch(`https://nominatim.openstreetmap.org/search?format=json&lat=${userLat}&lon=${userLon}&limit=10&radius=100`)
+                    ];
+                    
+                    const responses = await Promise.allSettled(promises);
+                    let locationNames = [];
+                    
+                    // Process reverse geocoding result
+                    if (responses[0].status === 'fulfilled') {
+                        const reverseData = await responses[0].value.json();
+                        if (reverseData.display_name) {
+                            locationNames.push(reverseData.display_name.toLowerCase());
+                        }
+                    }
+                    
+                    // Process nearby search results
+                    if (responses[1].status === 'fulfilled') {
+                        const searchData = await responses[1].value.json();
+                        searchData.forEach(place => {
+                            if (place.display_name) {
+                                locationNames.push(place.display_name.toLowerCase());
+                            }
+                        });
+                    }
+                    
+                    console.log('Location names found:', locationNames);
                     
                     franchises.forEach((franchise, chainIndex) => {
-                        if (locationName.includes(franchise.name.toLowerCase())) {
+                        const franchiseName = franchise.name.toLowerCase();
+                        const isNearFranchise = locationNames.some(name => 
+                            name.includes(franchiseName) || 
+                            name.includes(franchiseName.replace(/\s+/g, '')) ||
+                            franchiseName.split(' ').some(word => word.length > 3 && name.includes(word))
+                        );
+                        
+                        if (isNearFranchise) {
+                            console.log(`Found franchise: ${franchise.name}`);
+                            
                             // Get items for this chain or items without specific store/chain
                             const chainItems = items.filter(item => {
                                 // Skip completed items
@@ -983,59 +1049,139 @@
                             
                             if (chainItems.length > 0) {
                                 const lastTime = lastNotified[franchise.name] || 0;
-                                if (now - lastTime > 3600000) {
+                                if (now - lastTime > 3600000) { // 1 hour cooldown
+                                    console.log(`Showing notification for franchise ${franchise.name}`);
                                     showNotification(franchise.name, chainItems.length);
                                     lastNotified[franchise.name] = now;
                                     localStorage.setItem('lastNotified', JSON.stringify(lastNotified));
+                                } else {
+                                    console.log(`Notification cooldown active for ${franchise.name}`);
                                 }
                             }
                         }
                     });
                 } catch (error) {
                     console.error('Error checking franchises:', error);
+                    // Fallback: still check for exact matches in a simpler way
+                    franchises.forEach((franchise, chainIndex) => {
+                        const chainItems = items.filter(item => {
+                            if (item.completed) return false;
+                            if (item.excludedChains && item.excludedChains.includes(chainIndex)) return false;
+                            return item.chainIndex === chainIndex || 
+                                (item.chainIndex === undefined && item.storeIndex === undefined);
+                        });
+                        
+                        if (chainItems.length > 0) {
+                            const lastTime = lastNotified[franchise.name] || 0;
+                            if (now - lastTime > 7200000) { // 2 hour cooldown for fallback
+                                console.log(`Fallback notification for ${franchise.name}`);
+                                showNotification(franchise.name, chainItems.length, true);
+                                lastNotified[franchise.name] = now;
+                                localStorage.setItem('lastNotified', JSON.stringify(lastNotified));
+                            }
+                        }
+                    });
                 }
             }
         }
 
-        function showNotification(storeName, itemCount) {
+        function showNotification(storeName, itemCount, isFallback = false) {
             const message = `You're near ${storeName}! You have ${itemCount} item${itemCount > 1 ? 's' : ''} to buy.`;
+            const fallbackMessage = isFallback ? ' (Location detection may be approximate)' : '';
+            
             if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification('🛒 Shopping Reminder', {
-                    body: message
+                const notification = new Notification('🛒 Shopping Reminder', {
+                    body: message + fallbackMessage,
+                    icon: 'icn.png',
+                    badge: 'icn.png',
+                    tag: 'shopping-reminder-' + storeName.replace(/\s+/g, '-'),
+                    requireInteraction: false,
+                    silent: false
                 });
+                
+                // Auto-close notification after 10 seconds
+                setTimeout(() => {
+                    notification.close();
+                }, 10000);
+                
+                console.log('Notification shown:', message);
             } else {
+                // Fallback to alert if notifications aren't available
                 alert(`🛒 ${message}`);
+                console.log('Alert shown (no notification permission):', message);
             }
         }
 
         function startLocationTracking() {
-            if ('geolocation' in navigator) {
-                watchId = navigator.geolocation.watchPosition(
-                    checkNearbyStores,
-                    (error) => {
-                        console.error('Location error:', error);
-                        alert('Could not access location. Please enable location services.');
-                        locationToggle.checked = false;
-                        locationEnabled = false;
-                        saveData();
-                    },
-                    {
-                        enableHighAccuracy: true,
-                        maximumAge: 60000,
-                        timeout: 27000
-                    }
-                );
-            } else {
+            console.log('Starting location tracking...');
+            
+            if (!('geolocation' in navigator)) {
                 alert('Geolocation not supported by your browser.');
                 locationToggle.checked = false;
                 locationEnabled = false;
+                return;
             }
+
+            // Test location access first
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    console.log('Initial location obtained:', position.coords.latitude, position.coords.longitude);
+                    
+                    // Start continuous tracking
+                    watchId = navigator.geolocation.watchPosition(
+                        checkNearbyStores,
+                        (error) => {
+                            console.error('Location tracking error:', error);
+                            let errorMessage = 'Could not access location. ';
+                            
+                            switch(error.code) {
+                                case error.PERMISSION_DENIED:
+                                    errorMessage += 'Please enable location permissions in your browser settings.';
+                                    break;
+                                case error.POSITION_UNAVAILABLE:
+                                    errorMessage += 'Location information is unavailable.';
+                                    break;
+                                case error.TIMEOUT:
+                                    errorMessage += 'Location request timed out.';
+                                    break;
+                                default:
+                                    errorMessage += 'An unknown error occurred.';
+                                    break;
+                            }
+                            
+                            alert(errorMessage);
+                            locationToggle.checked = false;
+                            locationEnabled = false;
+                            saveData();
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            maximumAge: 30000, // 30 seconds
+                            timeout: 15000 // 15 seconds
+                        }
+                    );
+                    
+                    console.log('Location tracking started with watchId:', watchId);
+                },
+                (error) => {
+                    console.error('Initial location error:', error);
+                    alert('Could not get your initial location. Please enable location services and try again.');
+                    locationToggle.checked = false;
+                    locationEnabled = false;
+                    saveData();
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000
+                }
+            );
         }
 
         function stopLocationTracking() {
             if (watchId !== null) {
                 navigator.geolocation.clearWatch(watchId);
                 watchId = null;
+                console.log('Location tracking stopped');
             }
         }
 
@@ -1049,25 +1195,34 @@
             saveData();
             
             if (locationEnabled) {
-                if ('Notification' in window && Notification.permission === 'default') {
-                    Notification.requestPermission().then(permission => {
-                        if (permission === 'granted') {
-                            startLocationTracking();
-                            alert('Location tracking enabled!');
-                        } else {
-                            locationToggle.checked = false;
-                            locationEnabled = false;
-                            alert('Please enable notifications for reminders.');
-                        }
-                    });
-                } else if (Notification.permission === 'granted') {
-                    startLocationTracking();
-                    alert('Location tracking enabled!');
+                // Check notification permission first
+                if ('Notification' in window) {
+                    if (Notification.permission === 'default') {
+                        Notification.requestPermission().then(permission => {
+                            if (permission === 'granted') {
+                                startLocationTracking();
+                                alert('Location tracking enabled! You\'ll get notified when near your stores.');
+                            } else {
+                                alert('Notifications are recommended for the best experience, but location tracking will still work.');
+                                startLocationTracking();
+                            }
+                        });
+                    } else if (Notification.permission === 'granted') {
+                        startLocationTracking();
+                        alert('Location tracking enabled! You\'ll get notified when near your stores.');
+                    } else {
+                        // Notifications denied, but still allow location tracking
+                        alert('Notifications are disabled. You can still use location tracking, but won\'t receive automatic reminders.');
+                        startLocationTracking();
+                    }
                 } else {
+                    // No notification support
+                    alert('Your browser doesn\'t support notifications, but location tracking will still work.');
                     startLocationTracking();
                 }
             } else {
                 stopLocationTracking();
+                alert('Location tracking disabled.');
             }
         });
 
@@ -1195,6 +1350,89 @@
                 searchResults.classList.remove('show');
                 searchResults.innerHTML = '';
             }
+        });
+
+        // Debug button for testing location functionality
+        document.getElementById('debugBtn').addEventListener('click', () => {
+            if (!('geolocation' in navigator)) {
+                alert('❌ Geolocation not supported by your browser');
+                return;
+            }
+
+            alert('🔍 Testing location access...');
+            
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    const accuracy = position.coords.accuracy;
+                    
+                    let debugInfo = `✅ Location Access: SUCCESS\n`;
+                    debugInfo += `📍 Coordinates: ${lat.toFixed(6)}, ${lon.toFixed(6)}\n`;
+                    debugInfo += `🎯 Accuracy: ${Math.round(accuracy)}m\n`;
+                    debugInfo += `🛒 Incomplete Items: ${items.filter(i => !i.completed).length}\n`;
+                    debugInfo += `🏪 Stores: ${stores.length}\n`;
+                    debugInfo += `⭐ Franchises: ${franchises.length}\n`;
+                    
+                    // Check distances to stores
+                    if (stores.length > 0) {
+                        debugInfo += `\n📏 Store Distances:\n`;
+                        stores.forEach(store => {
+                            const distance = getDistance(lat, lon, store.latitude, store.longitude);
+                            debugInfo += `• ${store.name}: ${Math.round(distance)}m\n`;
+                        });
+                    }
+                    
+                    // Test reverse geocoding
+                    try {
+                        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18`);
+                        const data = await response.json();
+                        debugInfo += `\n🌐 Location Name: ${data.display_name || 'Unknown'}\n`;
+                        
+                        // Check franchise matches
+                        if (franchises.length > 0) {
+                            debugInfo += `\n🔍 Franchise Matches:\n`;
+                            const locationName = data.display_name.toLowerCase();
+                            franchises.forEach(franchise => {
+                                const match = locationName.includes(franchise.name.toLowerCase());
+                                debugInfo += `• ${franchise.name}: ${match ? '✅ MATCH' : '❌ No match'}\n`;
+                            });
+                        }
+                    } catch (error) {
+                        debugInfo += `\n❌ Reverse geocoding failed: ${error.message}\n`;
+                    }
+                    
+                    // Check notification permission
+                    if ('Notification' in window) {
+                        debugInfo += `\n🔔 Notifications: ${Notification.permission}\n`;
+                    } else {
+                        debugInfo += `\n❌ Notifications not supported\n`;
+                    }
+                    
+                    alert(debugInfo);
+                },
+                (error) => {
+                    let errorMsg = `❌ Location Error: `;
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMsg += 'Permission denied';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMsg += 'Position unavailable';
+                            break;
+                        case error.TIMEOUT:
+                            errorMsg += 'Request timeout';
+                            break;
+                        default:
+                            errorMsg += 'Unknown error';
+                    }
+                    alert(errorMsg + `\n\nPlease enable location services and try again.`);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000
+                }
+            );
         });
 
         locationToggle.checked = locationEnabled;
