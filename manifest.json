@@ -1,24 +1,51 @@
 {
-  "name": "EasyShopping",
+  "name": "EasyShopping - Smart Shopping List",
   "short_name": "EasyShopping",
-  "description": "Your smart shopping list with location reminders",
-  "start_url": "/",
+  "description": "Your smart shopping list with location reminders and native notifications",
+  "start_url": "./",
   "display": "standalone",
-  "background_color": "#667eea",
-  "theme_color": "#667eea",
-  "orientation": "portrait",
+  "background_color": "#10b981",
+  "theme_color": "#10b981",
+  "orientation": "portrait-primary",
+  "scope": "./",
+  "categories": ["shopping", "productivity", "lifestyle"],
+  "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false,
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "./icn.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "icon-512.png",
+      "src": "./iconnn.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "./icn.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add Item",
+      "short_name": "Add",
+      "description": "Quickly add an item to your shopping list",
+      "url": "./?action=add",
+      "icons": [
+        {
+          "src": "./icn.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }

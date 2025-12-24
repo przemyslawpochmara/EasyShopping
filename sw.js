@@ -1,13 +1,13 @@
-const CACHE_NAME = 'easyshopping-v2';
+const CACHE_NAME = 'easyshopping-v3';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/manifest.json',
-  '/icn.png',
-  '/iconnn.png'
+  './',
+  './index.html',
+  './manifest.json',
+  './icn.png',
+  './iconnn.png'
 ];
 
+// Install event - cache resources
 self.addEventListener('install', (event) => {
   console.log('Service Worker installing...');
   event.waitUntil(
@@ -23,6 +23,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
+// Fetch event - serve from cache
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
@@ -33,12 +34,13 @@ self.addEventListener('fetch', (event) => {
       .catch(() => {
         // If both cache and network fail, return a basic offline page for navigation requests
         if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
+          return caches.match('./index.html');
         }
       })
   );
 });
 
+// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   console.log('Service Worker activating...');
   event.waitUntil(
@@ -58,31 +60,124 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Handle notification clicks
+// Handle notification clicks - open app
 self.addEventListener('notificationclick', (event) => {
-  console.log('Notification clicked');
+  console.log('Notification clicked:', event.notification.tag);
   event.notification.close();
-  
-  // Focus or open the app when notification is clicked
-  event.waitUntil(
-    clients.matchAll({ type: 'window' }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url === self.registration.scope && 'focus' in client) {
-          return client.focus();
+
+  if (event.action === 'open') {
+    // Open the app
+    event.waitUntil(
+      clients.openWindow('./')
+    );
+  } else if (event.action === 'dismiss') {
+    // Just close the notification (already done above)
+    console.log('Notification dismissed');
+  } else {
+    // Default click - focus or open app
+    event.waitUntil(
+      clients.matchAll({ 
+        type: 'window',
+        includeUncontrolled: true 
+      }).then((clientList) => {
+        // If app is already open, focus it
+        for (const client of clientList) {
+          if (client.url.includes(self.registration.scope) && 'focus' in client) {
+            return client.focus();
+          }
         }
-      }
-      if (clients.openWindow) {
-        return clients.openWindow('/');
-      }
-    })
-  );
+        // If app is not open, open it
+        if (clients.openWindow) {
+          return clients.openWindow('./');
+        }
+      })
+    );
+  }
 });
 
-// Handle background sync for location checking (if supported)
+// Handle notification close
+self.addEventListener('notificationclose', (event) => {
+  console.log('Notification closed:', event.notification.tag);
+});
+
+// Background sync for location checking (when supported)
 self.addEventListener('sync', (event) => {
   if (event.tag === 'location-check') {
     console.log('Background sync: location-check');
+    event.waitUntil(performLocationCheck());
+  }
+});
+
+// Push event for server-sent notifications (future enhancement)
+self.addEventListener('push', (event) => {
+  console.log('Push message received:', event);
+  
+  const options = {
+    body: event.data ? event.data.text() : 'You have items to buy nearby!',
+    icon: './icn.png',
+    badge: './icn.png',
+    tag: 'shopping-reminder',
+    requireInteraction: false,
+    actions: [
+      {
+        action: 'open',
+        title: 'Open App',
+        icon: './icn.png'
+      },
+      {
+        action: 'dismiss',
+        title: 'Dismiss',
+        icon: './icn.png'
+      }
+    ]
+  };
+
+  event.waitUntil(
+    self.registration.showNotification('🛒 Shopping Reminder', options)
+  );
+});
+
+// Background location check function
+async function performLocationCheck() {
+  try {
     // This would be used for background location checking
-    // Currently not implemented as it requires more complex setup
+    // Currently limited by browser security policies
+    console.log('Background location check requested');
+    
+    // Send message to active clients to perform location check
+    const clients = await self.clients.matchAll();
+    clients.forEach(client => {
+      client.postMessage({
+        type: 'BACKGROUND_LOCATION_CHECK'
+      });
+    });
+  } catch (error) {
+    console.error('Background location check failed:', error);
+  }
+}
+
+// Message handling from main app
+self.addEventListener('message', (event) => {
+  console.log('Service Worker received message:', event.data);
+  
+  if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
+    const { title, body, tag, icon } = event.data;
+    
+    self.registration.showNotification(title || '🛒 Shopping Reminder', {
+      body: body || 'You have items to buy nearby!',
+      icon: icon || './icn.png',
+      badge: './icn.png',
+      tag: tag || 'shopping-reminder',
+      requireInteraction: false,
+      silent: false,
+      vibrate: [200, 100, 200],
+      actions: [
+        {
+          action: 'open',
+          title: 'Open List',
+          icon: './icn.png'
+        }
+      ]
+    });
   }
 });
