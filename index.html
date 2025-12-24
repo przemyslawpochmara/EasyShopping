@@ -463,6 +463,9 @@
             <button class="manage-stores-btn" id="debugBtn" style="margin-top: 10px; background: #6c757d; color: white;">
                 Debug Location (Tap to Test)
             </button>
+            <button class="manage-stores-btn" id="clearNotificationsBtn" style="margin-top: 10px; background: #dc3545; color: white;">
+                Clear Notification History
+            </button>
         </div>
 
         <div class="input-section">
@@ -979,13 +982,13 @@
                     
                     if (storeItems.length > 0) {
                         const lastTime = lastNotified[store.name] || 0;
-                        if (now - lastTime > 3600000) { // 1 hour cooldown
+                        if (now - lastTime > 300000) { // 5 minute cooldown instead of 1 hour
                             console.log(`Showing notification for ${store.name}`);
                             showNotification(store.name, storeItems.length);
                             lastNotified[store.name] = now;
                             localStorage.setItem('lastNotified', JSON.stringify(lastNotified));
                         } else {
-                            console.log(`Notification cooldown active for ${store.name}`);
+                            console.log(`Notification cooldown active for ${store.name} (${Math.round((300000 - (now - lastTime)) / 60000)} minutes remaining)`);
                         }
                     }
                 }
@@ -1049,13 +1052,13 @@
                             
                             if (chainItems.length > 0) {
                                 const lastTime = lastNotified[franchise.name] || 0;
-                                if (now - lastTime > 3600000) { // 1 hour cooldown
+                                if (now - lastTime > 300000) { // 5 minute cooldown instead of 1 hour
                                     console.log(`Showing notification for franchise ${franchise.name}`);
                                     showNotification(franchise.name, chainItems.length);
                                     lastNotified[franchise.name] = now;
                                     localStorage.setItem('lastNotified', JSON.stringify(lastNotified));
                                 } else {
-                                    console.log(`Notification cooldown active for ${franchise.name}`);
+                                    console.log(`Notification cooldown active for ${franchise.name} (${Math.round((300000 - (now - lastTime)) / 60000)} minutes remaining)`);
                                 }
                             }
                         }
@@ -1073,7 +1076,7 @@
                         
                         if (chainItems.length > 0) {
                             const lastTime = lastNotified[franchise.name] || 0;
-                            if (now - lastTime > 7200000) { // 2 hour cooldown for fallback
+                            if (now - lastTime > 600000) { // 10 minute cooldown for fallback
                                 console.log(`Fallback notification for ${franchise.name}`);
                                 showNotification(franchise.name, chainItems.length, true);
                                 lastNotified[franchise.name] = now;
@@ -1433,6 +1436,14 @@
                     timeout: 10000
                 }
             );
+        });
+
+        // Clear notification history button
+        document.getElementById('clearNotificationsBtn').addEventListener('click', () => {
+            if (confirm('Clear notification history? You will get notifications immediately when near stores.')) {
+                localStorage.removeItem('lastNotified');
+                alert('✅ Notification history cleared! You will now get notifications every time you are near a store (with 5-minute cooldown).');
+            }
         });
 
         locationToggle.checked = locationEnabled;
