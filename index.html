@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#667eea">
+    <meta name="theme-color" content="#10b981">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icn.png" type="image/png">
     <title>EasyShopping</title>
     <style>
         * {
@@ -461,10 +466,13 @@
                 Favorite Retail Chains (<span id="franchiseCount">0</span>)
             </button>
             <button class="manage-stores-btn" id="debugBtn" style="margin-top: 10px; background: #6c757d; color: white;">
-                Debug Location (Tap to Test)
+                Location Info
             </button>
             <button class="manage-stores-btn" id="clearNotificationsBtn" style="margin-top: 10px; background: #dc3545; color: white;">
                 Clear Notification History
+            </button>
+            <button class="manage-stores-btn" id="testNotificationBtn" style="margin-top: 10px; background: #ffc107; color: #000;">
+                Test Notification
             </button>
         </div>
 
@@ -552,8 +560,28 @@
 
         // Service Worker Registration
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').then(() => {
+            navigator.serviceWorker.register('sw.js').then((registration) => {
                 console.log('Service Worker registered successfully');
+                
+                // Listen for messages from service worker
+                navigator.serviceWorker.addEventListener('message', (event) => {
+                    console.log('Message from service worker:', event.data);
+                    
+                    if (event.data && event.data.type === 'BACKGROUND_LOCATION_CHECK') {
+                        // Perform location check when requested by service worker
+                        if (locationEnabled && watchId !== null) {
+                            navigator.geolocation.getCurrentPosition(
+                                checkNearbyStores,
+                                (error) => console.error('Background location check failed:', error),
+                                {
+                                    enableHighAccuracy: true,
+                                    maximumAge: 60000,
+                                    timeout: 10000
+                                }
+                            );
+                        }
+                    }
+                });
             }).catch((error) => {
                 console.error('Service Worker registration failed:', error);
             });
@@ -1091,27 +1119,49 @@
         function showNotification(storeName, itemCount, isFallback = false) {
             const message = `You're near ${storeName}! You have ${itemCount} item${itemCount > 1 ? 's' : ''} to buy.`;
             const fallbackMessage = isFallback ? ' (Location detection may be approximate)' : '';
+            const fullMessage = message + fallbackMessage;
             
-            if ('Notification' in window && Notification.permission === 'granted') {
-                const notification = new Notification('🛒 Shopping Reminder', {
-                    body: message + fallbackMessage,
-                    icon: 'icn.png',
-                    badge: 'icn.png',
-                    tag: 'shopping-reminder-' + storeName.replace(/\s+/g, '-'),
-                    requireInteraction: false,
-                    silent: false
-                });
-                
-                // Auto-close notification after 10 seconds
-                setTimeout(() => {
-                    notification.close();
-                }, 10000);
-                
-                console.log('Notification shown:', message);
+            console.log('Attempting to show notification:', fullMessage);
+            
+            // Check notification permission first
+            if ('Notification' in window) {
+                if (Notification.permission === 'granted') {
+                    // Try Service Worker notification first (better for PWA)
+                    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                        console.log('Using Service Worker notification');
+                        navigator.serviceWorker.controller.postMessage({
+                            type: 'SHOW_NOTIFICATION',
+                            title: '🛒 Shopping Reminder',
+                            body: fullMessage,
+                            tag: 'shopping-reminder-' + storeName.replace(/\s+/g, '-'),
+                            icon: 'https://przemyslawpochmara.github.io/EasyShopping/icn.png'
+                        });
+                    } else {
+                        // Use regular browser notification
+                        console.log('Using browser notification');
+                        const notification = new Notification('🛒 Shopping Reminder', {
+                            body: fullMessage,
+                            icon: 'https://przemyslawpochmara.github.io/EasyShopping/icn.png',
+                            badge: 'https://przemyslawpochmara.github.io/EasyShopping/icn.png',
+                            tag: 'shopping-reminder-' + storeName.replace(/\s+/g, '-'),
+                            requireInteraction: false,
+                            silent: false,
+                            vibrate: [200, 100, 200]
+                        });
+                        
+                        // Auto-close notification after 10 seconds
+                        setTimeout(() => {
+                            notification.close();
+                        }, 10000);
+                    }
+                    console.log('Notification shown successfully:', message);
+                } else {
+                    console.log('Notification permission not granted, using alert');
+                    alert(`🛒 ${fullMessage}`);
+                }
             } else {
-                // Fallback to alert if notifications aren't available
-                alert(`🛒 ${message}`);
-                console.log('Alert shown (no notification permission):', message);
+                console.log('Notifications not supported, using alert');
+                alert(`🛒 ${fullMessage}`);
             }
         }
 
@@ -1408,6 +1458,11 @@
                     // Check notification permission
                     if ('Notification' in window) {
                         debugInfo += `\n🔔 Notifications: ${Notification.permission}\n`;
+                        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                            debugInfo += `🔧 Service Worker: Active (native notifications available)\n`;
+                        } else {
+                            debugInfo += `🔧 Service Worker: Not ready (browser notifications only)\n`;
+                        }
                     } else {
                         debugInfo += `\n❌ Notifications not supported\n`;
                     }
@@ -1446,6 +1501,32 @@
             }
         });
 
+        // Test notification button
+        document.getElementById('testNotificationBtn').addEventListener('click', async () => {
+            console.log('Testing notification system...');
+            
+            // Check notification permission
+            if ('Notification' in window) {
+                if (Notification.permission === 'default') {
+                    const permission = await Notification.requestPermission();
+                    if (permission !== 'granted') {
+                        alert('❌ Notification permission denied. Please enable notifications in your browser settings.');
+                        return;
+                    }
+                } else if (Notification.permission === 'denied') {
+                    alert('❌ Notifications are blocked. Please enable them in your browser settings:\n\n1. Click the lock/info icon in address bar\n2. Allow notifications\n3. Refresh the page');
+                    return;
+                }
+            } else {
+                alert('❌ Your browser does not support notifications.');
+                return;
+            }
+            
+            // Test the notification
+            showNotification('Test Store', 3, false);
+            alert('✅ Test notification sent! If you didn\'t see it, check your browser notification settings.');
+        });
+
         locationToggle.checked = locationEnabled;
         if (locationEnabled) {
             startLocationTracking();
@@ -1454,6 +1535,111 @@
         renderList();
         renderStores();
         renderFranchises();
+
+        // Enhanced PWA Install Prompt and Native App Features
+        let deferredPrompt;
+        let isInstalled = false;
+
+        // Check if app is installed
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA was installed');
+            isInstalled = true;
+            // Hide install prompt if showing
+            const installPrompt = document.querySelector('.install-prompt');
+            if (installPrompt) {
+                installPrompt.remove();
+            }
+        });
+
+        // Detect if running as installed PWA
+        if (window.matchMedia('(display-mode: standalone)').matches || 
+            window.navigator.standalone === true) {
+            console.log('Running as installed PWA - native notifications available');
+            isInstalled = true;
+        }
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('Install prompt available');
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Only show install prompt if not already installed
+            if (!isInstalled) {
+                showInstallPrompt();
+            }
+        });
+
+        function showInstallPrompt() {
+            const installPrompt = document.createElement('div');
+            installPrompt.className = 'install-prompt';
+            installPrompt.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                color: white;
+                padding: 15px;
+                border-radius: 10px;
+                box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+                z-index: 1000;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                font-size: 14px;
+                animation: slideUp 0.3s ease-out;
+            `;
+            
+            installPrompt.innerHTML = `
+                <div>
+                    <div style="font-weight: bold; margin-bottom: 4px;">📱 Install EasyShopping</div>
+                    <div style="font-size: 12px; opacity: 0.9;">Get native notifications and offline access!</div>
+                </div>
+                <div>
+                    <button id="installBtn" style="background: white; color: #10b981; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; margin-right: 8px; cursor: pointer;">Install</button>
+                    <button id="dismissBtn" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer;">Later</button>
+                </div>
+            `;
+            
+            // Add animation keyframes
+            if (!document.querySelector('#install-animation')) {
+                const style = document.createElement('style');
+                style.id = 'install-animation';
+                style.textContent = `
+                    @keyframes slideUp {
+                        from { transform: translateY(100%); opacity: 0; }
+                        to { transform: translateY(0); opacity: 1; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            document.body.appendChild(installPrompt);
+            
+            document.getElementById('installBtn').addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log('Install prompt result:', outcome);
+                    if (outcome === 'accepted') {
+                        alert('🎉 Great! Once installed, you\'ll get native notifications on your device!');
+                    }
+                    deferredPrompt = null;
+                }
+                installPrompt.remove();
+            });
+            
+            document.getElementById('dismissBtn').addEventListener('click', () => {
+                installPrompt.remove();
+            });
+            
+            // Auto-hide after 15 seconds
+            setTimeout(() => {
+                if (installPrompt.parentNode) {
+                    installPrompt.remove();
+                }
+            }, 15000);
+        }
     </script>
 </body>
 </html>
